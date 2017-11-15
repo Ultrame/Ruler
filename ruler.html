@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, user-scalable=no" />
+		<title></title>
+	</head>
+	<style>
+		* {
+			margin: 0;
+			padding: 0;
+		}
+		
+		.ruler-container {
+			position: relative;
+		}
+		
+		.ruler-border {
+			width: 100%;
+			visibility: hidden;
+		}
+		
+		#myCanvas {
+			position: absolute;
+			top: 0;
+			z-index: 999;
+		}
+		.weight-border{
+			width: 56px;
+			position: absolute;
+			left: 50%;
+			margin-left: -29px;
+			z-index: 998;
+		}
+	</style>
+
+	<body>
+		<div class="ruler-container">
+			<img class="ruler-border" src="rulerBorder.png" />
+			<canvas id="myCanvas"></canvas>
+			<img class="weight-border" style="top: 0;" src="weightBorder.png" />
+		</div>
+	</body>
+	<script src="jquery-1.7.1.min.js"></script>
+	<script>
+		var weight = 30.0;
+		var j = 0;
+		var graduations = [];
+		var rulerBorder = document.getElementsByClassName('ruler-border')[0];
+		var can = document.getElementById('myCanvas');
+		var ctx = can.getContext('2d');
+		window.onload = function() {
+			can.width = window.screen.width;
+			can.height = document.getElementsByClassName('ruler-border')[0].clientHeight;
+			
+			$('.weight-border')[0].style.top = can.height * 0.13 + 'px';
+			
+			addGraduation(can.width,12,weight);
+			drawWeight(can,ctx,weight.toFixed(1));
+			drawBackground(can,ctx);
+		}
+
+		$('#myCanvas').on('touchstart',function(e){
+			e.preventDefault();
+			startX = e.originalEvent.targetTouches[0].pageX;
+		})
+		$('#myCanvas').on('touchmove', function(e) {
+			moveX = e.originalEvent.changedTouches[0].pageX - startX;
+			if(moveX > 0 && parseInt(moveX / 5) > j){
+				addGraduation(can.width,12,weight-=0.1);
+				drawWeight(can,ctx,weight.toFixed(1));
+				j++;
+			}else if(moveX > 0 && parseInt(moveX / 5) < j){
+				addGraduation(can.width,12,weight+=0.1);
+				drawWeight(can,ctx,weight.toFixed(1));
+				j--;
+			}else if(moveX < 0 && parseInt(moveX / 5) <j){
+				addGraduation(can.width,12,weight+=0.1);
+				drawWeight(can,ctx,weight.toFixed(1));
+				j--;
+			}else if(moveX < 0 && parseInt(moveX / 5) > j){
+				addGraduation(can.width,12,weight-=0.1);
+				drawWeight(can,ctx,weight.toFixed(1));
+				j++;
+			}
+		})
+		$('#myCanvas').on('touchend',function(e){
+			j = 0;
+		})
+		function drawBackground(can,ctx) {
+			ctx.drawImage(rulerBorder,0,0,can.width,can.height);
+		}
+
+		function drawLine(can, ctx) {
+			ctx.moveTo(0, can.height * 0.3);
+			ctx.lineTo(can.width, can.height * 0.3);
+			ctx.strokeStyle = '#989898';
+			ctx.stroke();
+		}
+		
+		function drawRuler(can,ctx,graduations,weight){
+			ctx.clearRect(0,0,can.width,can.height);
+			drawLine(can, ctx);
+			for(var i=0;i<graduations.length;i++){
+				ctx.beginPath();
+				ctx.moveTo(graduations[i].x,can.height*0.3);
+				ctx.lineTo(graduations[i].x,can.height*0.3+graduations[i].height);
+				if(graduations[i].value*10 % 10 == 0){
+					ctx.fillText(graduations[i].value,graduations[i].x-10,can.height*0.3+36);
+				}
+				ctx.strokeStyle = '#989898';
+				ctx.stroke();
+			}
+		}
+		
+		function drawWeight(can,ctx,weight){
+			ctx.save();
+			ctx.fillStyle = '#ff9308';
+			ctx.fillText(weight,can.width/2-11,can.height*0.13+15);
+			ctx.restore();
+		}
+		
+		//刻度
+		function addGraduation(canvasW,gridW,weight){
+			graduations = [];
+			var rulerWidht = gridW*36;
+			var startX = (canvasW - rulerWidht) / 2;
+			for(var i=0;i<36;i++){
+				var graduation = {};
+				graduation.x = startX + gridW * i - 0.5;
+				graduation.value = ((weight - 18*0.1)+i*0.1).toFixed(1);
+				if(graduation.value == weight.toFixed(1)){
+					graduation.height = 0;
+				}else{
+					if(graduation.value*10 % 10 == 0){
+						graduation.height = 16;
+					}else{
+						graduation.height = 8;
+					}
+				}
+				graduations.push(graduation);
+			}
+			drawRuler(can,ctx,graduations);
+			drawBackground(can,ctx);
+		}
+	</script>
+
+</html>
